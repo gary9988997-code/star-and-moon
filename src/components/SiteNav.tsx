@@ -8,7 +8,7 @@ import { navItems } from "@/data/site";
 export function SiteNav() {
   const pathname = usePathname();
 
-  if (pathname === "/gate" || pathname === "/globe-preview") return null;
+  if (pathname === "/gate") return null;
 
   return (
     <nav

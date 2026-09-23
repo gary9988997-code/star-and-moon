@@ -12,7 +12,7 @@ export function BackgroundMusic() {
   const contextRef = useRef<AudioContext | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const pauseTimerRef = useRef<number | null>(null);
-  const [playing, setPlaying] = useState(homeConfig.music.defaultOn);
+  const [playing, setPlaying] = useState<boolean>(homeConfig.music.defaultOn);
 
   function ensureAudioGraph() {
     const audio = audioRef.current;

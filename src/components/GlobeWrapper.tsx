@@ -51,8 +51,6 @@ const GlobeWrapper = forwardRef<GlobeMethods | undefined, GlobeWrapperProps>(
       <Globe
         {...props}
         ref={globeInstanceRef}
-        autoRotate={autoRotate}
-        autoRotateSpeed={autoRotateSpeed}
         onGlobeReady={handleReady}
       />
     );

@@ -95,7 +95,7 @@ function ManuscriptGallery({
     return () => window.removeEventListener("keydown", onKey);
   }, [goTo, onClose, safeIndex]);
 
-  function touchDistance(touches: TouchList) {
+  function touchDistance(touches: ReactTouchEvent["touches"]) {
     if (touches.length < 2) return 0;
     const a = touches[0];
     const b = touches[1];
