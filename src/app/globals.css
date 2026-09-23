@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 霞鹜文楷：本地字体（信件正文专用） */
+@font-face {
+  font-family: "LXGW WenKai";
+  src: url("/fonts/LXGWWenKai-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* 品牌主题色 */
+  --bg-deep: #0b0620;
+  --bg-deep-2: #1a103d;
+  --primary: #8b5cf6;
+  --primary-light: #a78bfa;
+  --moon-gold: #fbbf24;
+  --rose-gold: #f9a8d4;
+  --text: #f8f5ff;
+
+  /* 语义别名（兼容既有引用） */
+  --foreground: var(--text);
+  --muted: color-mix(in srgb, var(--primary-light) 72%, transparent);
+  --space-deep: var(--bg-deep);
+  --space-navy: var(--bg-deep-2);
+  --cosmos-purple: var(--primary);
+  --moon-glow: var(--moon-gold);
+
+  /* 字体栈 */
+  --font-display-stack: var(--font-display), "Noto Serif SC", "思源宋体",
+    "Songti SC", serif;
+  --font-body-stack: var(--font-body), "Noto Sans SC", "思源黑体",
+    "Microsoft YaHei", sans-serif;
+  --font-accent-stack: var(--font-accent), var(--font-display), "Noto Serif SC",
+    "思源宋体", "Songti SC", serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-deep);
+}
+
+body {
+  color: var(--text);
+  background-color: var(--bg-deep);
+  background-image: radial-gradient(
+    ellipse 130% 100% at 50% 25%,
+    var(--bg-deep-2) 0%,
+    var(--bg-deep) 70%
+  );
+  background-attachment: fixed;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  font-family: var(--font-body-stack);
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display-stack);
+  }
+
+  .font-accent {
+    font-family: var(--font-accent-stack);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .safe-px {
+    @apply px-5 sm:px-8;
+  }
+
+  .safe-py {
+    @apply py-8 sm:py-12 landscape:py-4;
+  }
+
+  .page-shell {
+    @apply relative z-10 mx-auto w-full max-w-lg safe-px safe-py
+      landscape:max-w-4xl landscape:flex landscape:items-center
+      landscape:min-h-[100dvh];
+  }
+
+  .section-title {
+    @apply font-display text-2xl tracking-wide text-moon-gold
+      sm:text-3xl landscape:text-2xl;
+  }
+
+  .section-sub {
+    @apply mt-2 text-sm text-[var(--muted)] sm:text-base;
+  }
+
+  /* 隐藏滚动条，保留滚动 */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 地球缓慢自转（固定居中，不再做位移） */
+  .earth-spin {
+    animation: earth-spin 80s linear infinite;
+  }
+
+  @keyframes earth-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* 星图航线：常显城市对话气泡（定位交给 globe 投影，这里只做外观） */
+  .globe-city-bubble {
+    position: relative;
+    overflow: visible;
+  }
+
+  .globe-city-bubble::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 7px solid rgba(232, 200, 255, 0.95);
+    pointer-events: none;
+  }
+
+  /* 左侧城市列表：强制 <768px 隐藏，避免断点未生效 */
+  .journey-city-list {
+    display: none !important;
+  }
+
+  @media (min-width: 768px) {
+    .journey-city-list {
+      display: block !important;
+    }
+  }
+}

@@ -1,0 +1,307 @@
+.page {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+  /* 竖屏：导航在底部，顶部只需安全间距 */
+  padding-top: 1.25rem;
+  padding-bottom: 7rem;
+  background-color: var(--bg-deep);
+}
+
+/* 横屏 / 桌面：SiteNav 固定在顶部，需为导航高度 + 32～48px 留白 */
+@media (orientation: landscape) {
+  .page {
+    padding-top: calc(3.25rem + 2.5rem);
+    /* ~52px 导航 + ~40px 间距 */
+  }
+}
+
+@media (orientation: landscape) and (min-width: 768px) {
+  .page {
+    padding-top: calc(3.5rem + 2.75rem);
+    /* 桌面横屏：导航底部到标题约 40～44px */
+  }
+}
+
+.title {
+  margin-top: 0;
+  margin-bottom: 1.25rem; /* 标题 → 月亮约 20px */
+  flex-shrink: 0;
+}
+
+.moonWrap {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.22));
+  transition: filter 0.45s ease, transform 0.45s ease;
+}
+
+.moonBright {
+  filter: drop-shadow(0 0 18px rgba(255, 236, 180, 0.65))
+    drop-shadow(0 0 28px rgba(251, 191, 36, 0.4));
+  transform: scale(1.06);
+}
+
+@media (min-width: 640px) {
+  .moonWrap {
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+}
+
+.stage {
+  width: min(92vw, 28rem);
+  max-width: 100%;
+  text-align: center;
+}
+
+.bodyShell {
+  position: relative;
+  min-height: 8rem;
+  max-height: min(52vh, 28rem);
+}
+
+.body {
+  height: 100%;
+  max-height: min(52vh, 28rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 2.5rem; /* 约 40px，最新一行不贴底边 */
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.cursor {
+  display: inline-block;
+  width: 1.5px;
+  height: 0.95em;
+  margin-left: 3px;
+  vertical-align: -0.1em;
+  border-radius: 1px;
+  background: rgba(220, 210, 255, 0.55);
+  box-shadow: 0 0 5px rgba(200, 190, 255, 0.28);
+  animation: letterCursorBlink 1.6s ease-in-out infinite;
+}
+
+@keyframes letterCursorBlink {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+.button {
+  margin-top: 1.75rem;
+  min-height: 44px;
+  padding: 0.7rem 1.75rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  background: rgba(11, 6, 32, 0.55);
+  color: rgba(251, 191, 36, 0.92);
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+
+.buttonVisible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.buttonLeaving {
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+}
+
+.button:hover {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(26, 16, 61, 0.65);
+  box-shadow:
+    0 0 16px rgba(167, 139, 250, 0.28),
+    0 0 24px rgba(251, 191, 36, 0.18);
+}
+
+.button:focus-visible {
+  outline: 1px solid rgba(251, 191, 36, 0.5);
+  outline-offset: 3px;
+}
+
+.burst {
+  pointer-events: none;
+  position: fixed;
+  left: 50%;
+  top: 42%;
+  z-index: 30;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: rgba(255, 248, 230, 0.9);
+  box-shadow: 0 0 12px rgba(255, 236, 180, 0.8);
+  opacity: 0;
+}
+
+.burstActive {
+  animation: letterStarBurst 0.85s ease-out forwards;
+}
+
+@keyframes letterStarBurst {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.4);
+    box-shadow:
+      0 0 8px rgba(255, 236, 180, 0.9),
+      0 0 0 0 rgba(251, 191, 36, 0.35);
+  }
+  40% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(18);
+    box-shadow:
+      0 0 40px rgba(255, 236, 180, 0.15),
+      0 0 0 80px rgba(251, 191, 36, 0);
+  }
+}
+
+.reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+.revealLine {
+  margin: 0;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.revealLineVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.revealLinePrimary {
+  font-size: 1.125rem;
+  letter-spacing: 0.08em;
+  color: rgba(251, 191, 36, 0.88);
+}
+
+.revealLineSecondary {
+  font-size: 1.35rem;
+  letter-spacing: 0.14em;
+  color: rgba(255, 224, 160, 0.95);
+  text-shadow: 0 0 18px rgba(251, 191, 36, 0.22);
+  animation: letterRevealBreathe 4.5s ease-in-out infinite;
+}
+
+@keyframes letterRevealBreathe {
+  0%,
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 14px rgba(251, 191, 36, 0.18);
+  }
+  50% {
+    opacity: 0.88;
+    text-shadow: 0 0 22px rgba(251, 191, 36, 0.32);
+  }
+}
+
+@media (min-width: 640px) {
+  .revealLinePrimary {
+    font-size: 1.25rem;
+  }
+  .revealLineSecondary {
+    font-size: 1.5rem;
+  }
+}
+
+.backLink {
+  position: absolute;
+  bottom: 6rem;
+  left: 50%;
+  z-index: 20;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.backLinkVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .backLink {
+    bottom: 2rem;
+  }
+  .bodyShell,
+  .body {
+    max-height: min(40vh, 16rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor {
+    animation: none;
+    opacity: 0.7;
+  }
+  .button,
+  .revealLine,
+  .backLink {
+    transform: none !important;
+    transition: opacity 0.3s ease !important;
+  }
+  .burstActive {
+    animation: letterStarBurstSimple 0.35s ease-out forwards;
+  }
+  .revealLineSecondary {
+    animation: none;
+  }
+}
+
+@keyframes letterStarBurstSimple {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(4);
+  }
+}
