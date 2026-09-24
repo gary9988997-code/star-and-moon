@@ -13,10 +13,18 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { gateConfig } from "@/data/config";
 
-type Meteor = {
+/** Canvas 流星运行时状态 */
+type GateMeteor = {
   id: number;
-  top: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  born: number;
   duration: number;
+  trailLen: number;
+  segments: number;
+  glowR: number;
 };
 
 type GateStar = {
@@ -71,8 +79,8 @@ export default function ClientGate() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [shake, setShake] = useState(false);
-  const [meteors, setMeteors] = useState<Meteor[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const meteorCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const gateStars = useMemo(
     () => buildGateStars(isMobile ? 22 : 42),
@@ -138,41 +146,204 @@ export default function ClientGate() {
   }, []);
 
   useEffect(() => {
+    const canvasEl = meteorCanvasRef.current;
+    if (!canvasEl) return;
+    const surface: HTMLCanvasElement = canvasEl;
+    const ctxOrNull = surface.getContext("2d");
+    if (!ctxOrNull) return;
+    const ctx: CanvasRenderingContext2D = ctxOrNull;
+
     let cancelled = false;
     let nextId = 0;
-    let activeCount = 0;
+    let frameId = 0;
     let timer: number | undefined;
+    const live: GateMeteor[] = [];
 
-    function spawnLoop() {
-      // 桌面 8～15s；手机略疏一些，减轻负担
-      const wait = isMobile
-        ? 11000 + Math.random() * 7000
-        : 8000 + Math.random() * 7000;
-      timer = window.setTimeout(() => {
-        if (cancelled) return;
-        if (activeCount < 2) {
-          const id = ++nextId;
-          const duration = isMobile
-            ? 1.05 + Math.random() * 0.45
-            : 1.2 + Math.random() * 0.75;
-          activeCount += 1;
-          setMeteors((prev) => [
-            ...prev,
-            { id, top: 4 + Math.random() * 42, duration },
-          ]);
-          window.setTimeout(() => {
-            activeCount = Math.max(0, activeCount - 1);
-            setMeteors((prev) => prev.filter((m) => m.id !== id));
-          }, duration * 1000 + 80);
-        }
-        spawnLoop();
-      }, wait);
+    // 桌面同屏上限 8（区间 6~8 取上限）；移动端 4（区间 3~4 取上限）
+    const maxConcurrent = isMobile ? 4 : 8;
+
+    function nextWaitMs() {
+      return isMobile
+        ? 800 + Math.random() * 1000 // 0.8~1.8s
+        : 400 + Math.random() * 500; // 0.4~0.9s
     }
 
+    function baseDuration() {
+      return isMobile
+        ? 1.05 + Math.random() * 0.45
+        : 1.2 + Math.random() * 0.75;
+    }
+
+    /** 与原 CSS cubic-bezier(0.22, 0.61, 0.36, 1) 接近的缓出 */
+    function meteorEase(t: number) {
+      const x = Math.min(1, Math.max(0, t));
+      return 1 - Math.pow(1 - x, 2.6);
+    }
+
+    let lastCssW = 0;
+    let lastCssH = 0;
+
+    function syncSize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = surface.clientWidth || window.innerWidth;
+      const h = surface.clientHeight || window.innerHeight;
+      if (w !== lastCssW || h !== lastCssH) {
+        lastCssW = w;
+        lastCssH = h;
+        surface.width = Math.max(1, Math.floor(w * dpr));
+        surface.height = Math.max(1, Math.floor(h * dpr));
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      return { w, h };
+    }
+
+    function spawnOne(opts?: { angleDeg?: number; topBias?: number }) {
+      if (cancelled || live.length >= maxConcurrent) return;
+      const { w, h } = syncSize();
+      // 出生：全宽随机，上方 2/3 高度
+      const x0 = Math.random() * w;
+      const y0 =
+        opts?.topBias !== undefined
+          ? Math.min(h * (2 / 3) - 8, Math.max(4, opts.topBias))
+          : Math.random() * h * (2 / 3);
+      // 速度/角度：沿用原 -38° 及流星雨微扰；位移量级对齐原 -78vw / 62vh
+      const angleDeg = opts?.angleDeg ?? -38;
+      const travelAngle = Math.atan2(62, -78) + ((angleDeg + 38) * Math.PI) / 180;
+      const travelDist =
+        Math.hypot(0.78 * w, 0.62 * h) * (0.92 + Math.random() * 0.16);
+      const x1 = x0 + Math.cos(travelAngle) * travelDist;
+      const y1 = y0 + Math.sin(travelAngle) * travelDist;
+
+      live.push({
+        id: ++nextId,
+        x0,
+        y0,
+        x1,
+        y1,
+        born: performance.now(),
+        duration: baseDuration() * 1000,
+        trailLen: 70 + Math.random() * 90,
+        segments: 12 + Math.floor(Math.random() * 7),
+        glowR: 6 + Math.random() * 3,
+      });
+    }
+
+    function spawnLoop() {
+      timer = window.setTimeout(() => {
+        if (cancelled) return;
+
+        if (Math.random() < 0.15) {
+          const showerCount = 3 + Math.floor(Math.random() * 2);
+          const { h } = syncSize();
+          const baseTop = Math.random() * h * (2 / 3) * 0.85;
+          for (let i = 0; i < showerCount; i += 1) {
+            spawnOne({
+              angleDeg: -38 + (Math.random() - 0.5) * 10,
+              topBias: baseTop + i * (12 + Math.random() * 18),
+            });
+          }
+        } else {
+          spawnOne();
+        }
+
+        spawnLoop();
+      }, nextWaitMs());
+    }
+
+    function drawMeteor(m: GateMeteor, now: number) {
+      const raw = (now - m.born) / m.duration;
+      if (raw >= 1) return false;
+      const e = meteorEase(raw);
+      const x = m.x0 + (m.x1 - m.x0) * e;
+      const y = m.y0 + (m.y1 - m.y0) * e;
+      const dx = m.x1 - m.x0;
+      const dy = m.y1 - m.y0;
+      const len = Math.hypot(dx, dy) || 1;
+      // 拖尾沿运动反方向
+      const bx = -dx / len;
+      const by = -dy / len;
+
+      let fade = 1;
+      if (raw < 0.08) fade = raw / 0.08;
+      else if (raw > 0.75) fade = (1 - raw) / 0.25;
+      fade = Math.min(1, Math.max(0, fade));
+
+      const n = m.segments;
+      for (let i = n - 1; i >= 0; i -= 1) {
+        const t0 = i / n;
+        const t1 = (i + 1) / n;
+        const tMid = (t0 + t1) * 0.5;
+        const px0 = x + bx * m.trailLen * t0;
+        const py0 = y + by * m.trailLen * t0;
+        const px1 = x + bx * m.trailLen * t1;
+        const py1 = y + by * m.trailLen * t1;
+        const width = 2.5 * (1 - tMid);
+        const alpha = 0.8 * (1 - tMid) * fade;
+        if (width < 0.15 || alpha < 0.02) continue;
+
+        const cool = Math.min(1, tMid * 1.6);
+        const r = Math.round(255 + (210 - 255) * cool);
+        const g = Math.round(255 + (200 - 255) * cool);
+        const b = 255;
+
+        ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+        ctx.lineWidth = width;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(px0, py0);
+        ctx.lineTo(px1, py1);
+        ctx.stroke();
+      }
+
+      // 头部光晕 + 2.5px 亮白核心
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, m.glowR);
+      glow.addColorStop(0, `rgba(255,255,255,${0.85 * fade})`);
+      glow.addColorStop(0.45, `rgba(230,220,255,${0.35 * fade})`);
+      glow.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, m.glowR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = `rgba(255,255,255,${fade})`;
+      ctx.beginPath();
+      ctx.arc(x, y, 1.25, 0, Math.PI * 2);
+      ctx.fill();
+
+      return true;
+    }
+
+    const loop = (now: number) => {
+      if (cancelled) return;
+      frameId = window.requestAnimationFrame(loop);
+      syncSize();
+      const w = surface.clientWidth || window.innerWidth;
+      const h = surface.clientHeight || window.innerHeight;
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalCompositeOperation = "lighter";
+
+      for (let i = live.length - 1; i >= 0; i -= 1) {
+        const m = live[i]!;
+        if (!drawMeteor(m, now)) {
+          live.splice(i, 1);
+        }
+      }
+
+      ctx.globalCompositeOperation = "source-over";
+    };
+
+    syncSize();
     spawnLoop();
+    frameId = window.requestAnimationFrame(loop);
+
+    const onResize = () => syncSize();
+    window.addEventListener("resize", onResize);
+
     return () => {
       cancelled = true;
       if (timer !== undefined) window.clearTimeout(timer);
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener("resize", onResize);
     };
   }, [isMobile]);
 
@@ -399,71 +570,13 @@ export default function ClientGate() {
           0%, 100% { opacity: 0.4; }
           50% { opacity: 0.75; }
         }
-        .gate-meteor {
+        .gate-meteor-canvas {
           pointer-events: none;
           position: absolute;
-          right: -4%;
-          width: 130px;
-          height: 8px;
-          background: transparent;
-          transform-origin: right center;
-          animation-name: gate-meteor-fly;
-          animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
-          animation-fill-mode: forwards;
-          z-index: 1;
-        }
-        /* 拖尾：前端更宽更亮，向后收窄淡出（轨迹向左下，左端为最前端） */
-        .gate-meteor::before {
-          content: "";
-          position: absolute;
-          left: 3px;
-          top: 50%;
-          width: calc(100% - 3px);
+          inset: 0;
+          width: 100%;
           height: 100%;
-          transform: translateY(-50%);
-          background: linear-gradient(
-            90deg,
-            rgba(196, 181, 253, 0.75) 0%,
-            rgba(167, 139, 250, 0.4) 32%,
-            rgba(139, 92, 246, 0.12) 68%,
-            transparent 100%
-          );
-          clip-path: polygon(0% 22%, 100% 46%, 100% 54%, 0% 78%);
-          pointer-events: none;
-        }
-        /* 锐利头部光点：运动最前端 */
-        .gate-meteor::after {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 50%;
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: radial-gradient(
-            circle at 50% 50%,
-            #ffffff 0%,
-            #ffffff 38%,
-            #c4b5fd 72%,
-            transparent 100%
-          );
-          box-shadow:
-            0 0 8px rgba(255, 255, 255, 0.9),
-            0 0 16px rgba(167, 139, 250, 0.6);
-          transform: translate(-35%, -50%);
-          pointer-events: none;
-        }
-        @keyframes gate-meteor-fly {
-          0% {
-            transform: translate(0, 0) rotate(-38deg);
-            opacity: 0;
-          }
-          8% { opacity: 1; }
-          75% { opacity: 1; }
-          100% {
-            transform: translate(-78vw, 62vh) rotate(-38deg);
-            opacity: 0;
-          }
+          z-index: 1;
         }
         .gate-pin-wrap {
           position: relative;
@@ -547,16 +660,7 @@ export default function ClientGate() {
             />
           ))}
         </div>
-        {meteors.map((meteor) => (
-          <span
-            key={meteor.id}
-            className="gate-meteor"
-            style={{
-              top: `${meteor.top}%`,
-              animationDuration: `${meteor.duration}s`,
-            }}
-          />
-        ))}
+        <canvas ref={meteorCanvasRef} className="gate-meteor-canvas" />
       </div>
 
       <div className="gate-stage">

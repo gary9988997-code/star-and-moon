@@ -2,7 +2,7 @@
 
 export const gateConfig = {
   title: "月光之门",
-  question: "初次相识的星光落下，至今多少晨昏？",
+  question: "到今天为止，我们认识多久啦？",
   password: "1550",
   errorMessage: "星光暂未通行，请再试一次",
   successMessage: "月色解锁，星河为你敞开。",
@@ -25,7 +25,7 @@ export const homeConfig = {
   ],
   music: {
     defaultOn: false,
-    playLabel: "播放",
-    pauseLabel: "暂停",
+    playLabel: "播放音乐",
+    pauseLabel: "暂停音乐",
   },
 } as const;

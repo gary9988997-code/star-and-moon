@@ -15,6 +15,7 @@ export {
   lettersContent,
 } from "./letters";
 export {
+  finalLetterContent,
   finalLetter,
   finalLetterBody,
   finalRevealLines,

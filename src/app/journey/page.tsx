@@ -17,6 +17,126 @@ const PAST_COUNT = 11;
 const PHOTO_HOLD_MS = 3500;
 const PHOTO_FADE_MS = 1000;
 
+/** 客户端挂载后再注入，避免 SSR/水合时 <style> 文本不一致 */
+const JOURNEY_PAGE_CSS = `
+@keyframes star-ring {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.75; }
+  100% { transform: translate(-50%, -50%) scale(3.6); opacity: 0; }
+}
+@keyframes star-breathe {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.95; }
+}
+@keyframes star-core {
+  0%, 100% { opacity: 0.82; filter: brightness(0.95); }
+  50% { opacity: 1; filter: brightness(1.4); }
+}
+@keyframes journey-kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
+}
+.journey-photo-slide {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: top;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity ${PHOTO_FADE_MS}ms ease-in-out;
+  filter: drop-shadow(0 8px 24px rgba(11, 6, 32, 0.65));
+}
+.journey-photo-slide.is-active {
+  opacity: 1;
+  pointer-events: none;
+}
+.globe-city-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.globe-city-bubble-panel {
+  position: relative;
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 0 0 8px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(11, 6, 32, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: left;
+  white-space: nowrap;
+  appearance: none;
+  -webkit-appearance: none;
+  opacity: 0.75;
+  transform: scale(1);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 1;
+}
+.globe-city-bubble-panel::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--bubble-tail, rgba(167, 139, 250, 0.7));
+  pointer-events: none;
+}
+.globe-city-bubble-panel:hover {
+  opacity: 1;
+  transform: scale(1.08);
+  z-index: 9999;
+}
+.globe-city-bubble-panel.is-selected,
+.globe-city-bubble-panel.is-selected:hover {
+  opacity: 1;
+  transform: scale(1.3);
+  z-index: 9999;
+}
+.globe-city-bubble-city {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.globe-city-bubble-title {
+  font-weight: 400;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.globe-city-dot {
+  pointer-events: auto;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.globe-city-dot-core {
+  display: block;
+  width: 6px;
+  height: 6px;
+  margin: 5px auto;
+  border-radius: 50%;
+}
+`;
+
 type GlobePoint = {
   lat: number;
   lng: number;
@@ -150,6 +270,17 @@ export default function JourneyPage() {
     setIsMounted(true);
   }, []);
 
+  // 挂载后再注入页面样式，避免 SSR 与客户端 <style> 文本水合不一致
+  useEffect(() => {
+    const styleEl = document.createElement("style");
+    styleEl.setAttribute("data-journey-page-css", "1");
+    styleEl.textContent = JOURNEY_PAGE_CSS;
+    document.head.appendChild(styleEl);
+    return () => {
+      styleEl.remove();
+    };
+  }, []);
+
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -278,124 +409,6 @@ export default function JourneyPage() {
 
   return (
     <main className="relative z-10 min-h-dvh overflow-y-auto safe-px safe-py pb-36 md:min-h-dvh md:overflow-hidden md:px-0 md:py-0">
-      <style>{`
-        @keyframes star-ring {
-          0% { transform: translate(-50%, -50%) scale(1); opacity: 0.75; }
-          100% { transform: translate(-50%, -50%) scale(3.6); opacity: 0; }
-        }
-        @keyframes star-breathe {
-          0%, 100% { opacity: 0.45; }
-          50% { opacity: 0.95; }
-        }
-        @keyframes star-core {
-          0%, 100% { opacity: 0.82; filter: brightness(0.95); }
-          50% { opacity: 1; filter: brightness(1.4); }
-        }
-        @keyframes journey-kenburns {
-          from { transform: scale(1); }
-          to { transform: scale(1.05); }
-        }
-        .journey-photo-slide {
-          position: absolute;
-          inset: 0;
-          margin: auto;
-          max-height: 100%;
-          max-width: 100%;
-          object-fit: contain;
-          object-position: top;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity ${PHOTO_FADE_MS}ms ease-in-out;
-          filter: drop-shadow(0 8px 24px rgba(11, 6, 32, 0.65));
-        }
-        .journey-photo-slide.is-active {
-          opacity: 1;
-          pointer-events: none;
-        }
-        .globe-city-marker {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          pointer-events: none;
-        }
-        .globe-city-bubble-panel {
-          position: relative;
-          pointer-events: auto;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 2px;
-          margin: 0 0 8px;
-          padding: 4px 10px;
-          border-radius: 12px;
-          background: rgba(11, 6, 32, 0.85);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          font-size: 12px;
-          line-height: 1.3;
-          text-align: left;
-          white-space: nowrap;
-          appearance: none;
-          -webkit-appearance: none;
-          opacity: 0.75;
-          transform: scale(1);
-          transition: opacity 0.18s ease, transform 0.18s ease;
-          z-index: 1;
-        }
-        .globe-city-bubble-panel::after {
-          content: "";
-          position: absolute;
-          left: 50%;
-          bottom: -5px;
-          transform: translateX(-50%);
-          width: 0;
-          height: 0;
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-top: 5px solid var(--bubble-tail, rgba(167, 139, 250, 0.7));
-          pointer-events: none;
-        }
-        .globe-city-bubble-panel:hover {
-          opacity: 1;
-          transform: scale(1.08);
-          z-index: 9999;
-        }
-        .globe-city-bubble-panel.is-selected,
-        .globe-city-bubble-panel.is-selected:hover {
-          opacity: 1;
-          transform: scale(1.3);
-          z-index: 9999;
-        }
-        .globe-city-bubble-city {
-          font-weight: 700;
-          white-space: nowrap;
-        }
-        .globe-city-bubble-title {
-          font-weight: 400;
-          font-size: 11px;
-          white-space: nowrap;
-        }
-        .globe-city-dot {
-          pointer-events: auto;
-          cursor: pointer;
-          width: 16px;
-          height: 16px;
-          margin: 0;
-          padding: 0;
-          border: none;
-          background: transparent;
-          appearance: none;
-          -webkit-appearance: none;
-        }
-        .globe-city-dot-core {
-          display: block;
-          width: 6px;
-          height: 6px;
-          margin: 5px auto;
-          border-radius: 50%;
-        }
-      `}</style>
       {/* 竖屏：上半屏地球。桌面：fixed 铺满，卡片开关不改变这块尺寸 */}
       <div
         ref={stageRef}

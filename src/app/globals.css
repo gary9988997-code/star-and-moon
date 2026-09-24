@@ -11,6 +11,15 @@
   font-display: swap;
 }
 
+/* 马善政手写体：月下定信专用 */
+@font-face {
+  font-family: "Ma Shan Zheng";
+  src: url("/fonts/ma-shan-zheng.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* 品牌主题色 */
   --bg-deep: #0b0620;

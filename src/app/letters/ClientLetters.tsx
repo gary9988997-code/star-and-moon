@@ -924,12 +924,13 @@ export default function ClientLetters() {
           display: none;
           position: absolute;
           left: 28px;
-          top: 112px;
-          bottom: 30%;
+          top: 50%;
+          bottom: auto;
           z-index: 22;
           width: 128px;
           max-width: 150px;
-          transform: none;
+          max-height: min(70vh, 560px);
+          transform: translateY(-50%);
           padding: 8px 6px;
           border: none;
           border-radius: 0;
@@ -1070,10 +1071,6 @@ export default function ClientLetters() {
       >
         {lettersCopy.backHome}
       </Link>
-
-      <h1 className="pointer-events-none absolute left-1/2 top-16 z-20 -translate-x-1/2 font-display text-xl text-moon-gold sm:text-2xl landscape:top-14">
-        {lettersCopy.title}
-      </h1>
 
       <nav
         className="letters-index-nav"

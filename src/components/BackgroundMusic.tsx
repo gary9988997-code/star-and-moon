@@ -1,45 +1,39 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { homeConfig } from "@/data/config";
+import { useEffect, useRef, useState } from "react";
+import { getSharedBgAudio, getSharedBgGraph } from "@/lib/bgAudio";
+import { VinylPlayer } from "./VinylPlayer";
 
-const MUSIC_SRC = "/music/bg.mp3";
 const TARGET_VOLUME = 0.4;
 const FADE_SECONDS = 0.7;
 
 export function BackgroundMusic() {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const contextRef = useRef<AudioContext | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
   const pauseTimerRef = useRef<number | null>(null);
-  const [playing, setPlaying] = useState<boolean>(homeConfig.music.defaultOn);
+  /** UI 仅由 audio 的 play / pause 事件驱动 */
+  const [playing, setPlaying] = useState(false);
 
-  function ensureAudioGraph() {
-    const audio = audioRef.current;
-    if (!audio) return null;
+  useEffect(() => {
+    const audio = getSharedBgAudio();
+    if (!audio) return;
 
-    if (!contextRef.current || !gainRef.current) {
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as Window & { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
-      if (!AudioContextClass) return null;
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onEnded = () => setPlaying(false);
 
-      const context = new AudioContextClass();
-      const source = context.createMediaElementSource(audio);
-      const gain = context.createGain();
-      gain.gain.value = 0;
-      source.connect(gain);
-      gain.connect(context.destination);
-      contextRef.current = context;
-      gainRef.current = gain;
-    }
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("ended", onEnded);
+    setPlaying(!audio.paused);
 
-    return { context: contextRef.current, gain: gainRef.current };
-  }
+    return () => {
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("ended", onEnded);
+    };
+  }, []);
 
   function fadeGainTo(target: number) {
-    const graph = ensureAudioGraph();
+    const graph = getSharedBgGraph();
     if (!graph) return;
     const now = graph.context.currentTime;
     graph.gain.gain.cancelScheduledValues(now);
@@ -55,17 +49,15 @@ export function BackgroundMusic() {
   }
 
   function handleToggle() {
-    const audio = audioRef.current;
-    const graph = ensureAudioGraph();
+    const audio = getSharedBgAudio();
+    const graph = getSharedBgGraph();
     if (!audio || !graph) return;
 
-    // 必须在同一次点击里解锁，iOS 才允许出声
     void graph.context.resume();
     clearPauseTimer();
 
-    if (playing) {
+    if (!audio.paused) {
       fadeGainTo(0);
-      setPlaying(false);
       pauseTimerRef.current = window.setTimeout(() => {
         audio.pause();
         pauseTimerRef.current = null;
@@ -73,37 +65,25 @@ export function BackgroundMusic() {
       return;
     }
 
-    const playPromise = audio.play();
     fadeGainTo(TARGET_VOLUME);
-    setPlaying(true);
-    void playPromise.catch(() => {
-      setPlaying(false);
+    void audio.play().catch(() => {
+      /* play 失败时 pause 事件会把 UI 拉回 */
     });
   }
 
-  const label = playing
-    ? homeConfig.music.pauseLabel
-    : homeConfig.music.playLabel;
+  useEffect(
+    () => () => {
+      clearPauseTimer();
+    },
+    [],
+  );
 
   return (
-    <>
-      <audio
-        ref={audioRef}
-        src={MUSIC_SRC}
-        loop
-        preload="none"
-        playsInline
-        className="hidden"
-      />
-      <button
-        type="button"
-        onClick={handleToggle}
-        aria-pressed={playing}
-        aria-label={label}
-        className="fixed right-5 top-5 z-50 rounded-full border border-primary/40 bg-space-deep/40 px-3 py-1.5 text-xs text-primary-light backdrop-blur-sm transition hover:border-moon-gold/50 hover:text-moon-gold sm:right-8 sm:top-8 landscape:top-14"
-      >
-        {label}
-      </button>
-    </>
+    <VinylPlayer
+      playing={playing}
+      onToggle={handleToggle}
+      playLabel="播放音乐"
+      pauseLabel="暂停音乐"
+    />
   );
 }

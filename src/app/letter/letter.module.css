@@ -5,303 +5,379 @@
   min-height: 100dvh;
   flex-direction: column;
   align-items: center;
-  overflow-x: hidden;
-  /* 竖屏：导航在底部，顶部只需安全间距 */
+  justify-content: center;
+  overflow: hidden;
   padding-top: 1.25rem;
   padding-bottom: 7rem;
-  background-color: var(--bg-deep);
+  background-color: transparent;
+  cursor: default;
 }
 
-/* 横屏 / 桌面：SiteNav 固定在顶部，需为导航高度 + 32～48px 留白 */
 @media (orientation: landscape) {
   .page {
-    padding-top: calc(3.25rem + 2.5rem);
-    /* ~52px 导航 + ~40px 间距 */
+    padding-top: calc(3.25rem + 1.5rem);
   }
 }
 
 @media (orientation: landscape) and (min-width: 768px) {
   .page {
-    padding-top: calc(3.5rem + 2.75rem);
-    /* 桌面横屏：导航底部到标题约 40～44px */
+    padding-top: calc(3.5rem + 1.75rem);
   }
 }
 
-.title {
-  margin-top: 0;
-  margin-bottom: 1.25rem; /* 标题 → 月亮约 20px */
-  flex-shrink: 0;
+/* —— 稀疏飘落星光 —— */
+.particles {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
 }
 
-.moonWrap {
-  width: 2.75rem;
-  height: 2.75rem;
-  margin-top: 0;
-  margin-bottom: 1.25rem;
-  flex-shrink: 0;
-  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.22));
-  transition: filter 0.45s ease, transform 0.45s ease;
+.particle {
+  position: absolute;
+  top: -8%;
+  border-radius: 50%;
+  background: rgba(255, 248, 230, 0.85);
+  box-shadow: 0 0 4px rgba(232, 200, 122, 0.35);
+  animation-name: letterStarFall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
-.moonBright {
-  filter: drop-shadow(0 0 18px rgba(255, 236, 180, 0.65))
-    drop-shadow(0 0 28px rgba(251, 191, 36, 0.4));
-  transform: scale(1.06);
+@keyframes letterStarFall {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.7;
+  }
+  85% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate3d(12px, 110vh, 0);
+    opacity: 0;
+  }
+}
+
+/* —— 信纸 + 月晕舞台 —— */
+.stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(92vw, 600px);
+  max-width: 640px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 光晕 ≥ 信纸宽度 1.3 倍，从纸缘透出 */
+.moonHalo {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 130%;
+  min-width: 130%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(232, 200, 122, 0.28) 0%,
+    rgba(232, 200, 122, 0.14) 28%,
+    rgba(232, 200, 122, 0.06) 52%,
+    transparent 70%
+  );
+  animation: moonBreathe 7s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes moonBreathe {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(1.05);
+  }
+}
+
+.paper {
+  --paper-base: #f7f1e4;
+  --paper-edge: #efe6d0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  /* 高度随内容；仅限制上限，避免大片空纸 */
+  height: auto;
+  min-height: 0;
+  max-height: 80vh;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: var(--paper-base);
+  background-image:
+    linear-gradient(
+      to right,
+      var(--paper-edge) 0,
+      transparent 10px,
+      transparent calc(100% - 10px),
+      var(--paper-edge) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      var(--paper-edge) 0,
+      transparent 10px,
+      transparent calc(100% - 10px),
+      var(--paper-edge) 100%
+    ),
+    linear-gradient(var(--paper-base), var(--paper-base));
+  box-shadow:
+    0 1px 2px rgba(20, 12, 4, 0.18),
+    0 6px 16px rgba(20, 12, 4, 0.22),
+    0 18px 42px rgba(0, 0, 0, 0.32),
+    0 36px 72px rgba(0, 0, 0, 0.18),
+    0 0 60px rgba(255, 220, 150, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 1s ease,
+    transform 1s ease;
+}
+
+.paperHug {
+  align-self: center;
+}
+
+.paperIn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* SVG feTurbulence 纸纹，极淡 3~5% */
+.paperGrain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  opacity: 0.04;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+
+.paperScroll {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 2rem 1.75rem 2.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(90, 70, 40, 0.28) transparent;
 }
 
 @media (min-width: 640px) {
-  .moonWrap {
-    width: 3.25rem;
-    height: 3.25rem;
+  .paperScroll {
+    padding: 2.5rem 2.25rem 2.75rem;
   }
 }
 
-.stage {
-  width: min(92vw, 28rem);
-  max-width: 100%;
-  text-align: center;
+.paperScroll::-webkit-scrollbar {
+  width: 4px;
 }
 
-.bodyShell {
-  position: relative;
-  min-height: 8rem;
-  max-height: min(52vh, 28rem);
+.paperScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.paperScroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(90, 70, 40, 0.22);
+}
+
+.paperScroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(90, 70, 40, 0.38);
+}
+
+.salutation {
+  margin: 0 0 1.55em;
+  font-family: "Ma Shan Zheng", "Songti SC", "STSong", serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 2.2;
+  color: #3a3228;
+  letter-spacing: 0.04em;
 }
 
 .body {
-  height: 100%;
-  max-height: min(52vh, 28rem);
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-bottom: 2.5rem; /* 约 40px，最新一行不贴底边 */
-  text-align: left;
+  margin: 0 0 1.75em;
+  font-family: "Ma Shan Zheng", "Songti SC", "STSong", serif;
+  font-size: 17px;
+  line-height: 2.2;
+  color: #3a3228;
   white-space: pre-wrap;
   word-break: break-word;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
-.body::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+.body:last-of-type {
+  margin-bottom: 2rem;
 }
 
-.cursor {
-  display: inline-block;
-  width: 1.5px;
-  height: 0.95em;
-  margin-left: 3px;
-  vertical-align: -0.1em;
-  border-radius: 1px;
-  background: rgba(220, 210, 255, 0.55);
-  box-shadow: 0 0 5px rgba(200, 190, 255, 0.28);
-  animation: letterCursorBlink 1.6s ease-in-out infinite;
-}
-
-@keyframes letterCursorBlink {
-  0%,
-  100% {
-    opacity: 0.28;
-  }
-  50% {
-    opacity: 0.72;
-  }
-}
-
-.button {
-  margin-top: 1.75rem;
-  min-height: 44px;
-  padding: 0.7rem 1.75rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(167, 139, 250, 0.45);
-  background: rgba(11, 6, 32, 0.55);
-  color: rgba(251, 191, 36, 0.92);
-  font-size: 0.875rem;
-  letter-spacing: 0.06em;
-  cursor: pointer;
+/* 滚动显现（移动端整段淡入） */
+.reveal {
   opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
+  transform: translateY(12px);
   transition:
-    opacity 0.45s ease,
-    transform 0.45s ease,
-    box-shadow 0.25s ease,
-    border-color 0.25s ease,
-    background-color 0.25s ease;
+    opacity 0.8s ease-out,
+    transform 0.8s ease-out;
 }
 
-.buttonVisible {
+.revealOn {
   opacity: 1;
   transform: translateY(0);
-  pointer-events: auto;
 }
 
-.buttonLeaving {
-  opacity: 0;
-  transform: translateY(-4px);
-  pointer-events: none;
-}
-
-.button:hover {
-  border-color: rgba(251, 191, 36, 0.55);
-  background: rgba(26, 16, 61, 0.65);
-  box-shadow:
-    0 0 16px rgba(167, 139, 250, 0.28),
-    0 0 24px rgba(251, 191, 36, 0.18);
-}
-
-.button:focus-visible {
-  outline: 1px solid rgba(251, 191, 36, 0.5);
-  outline-offset: 3px;
-}
-
-.burst {
-  pointer-events: none;
-  position: fixed;
-  left: 50%;
-  top: 42%;
-  z-index: 30;
-  width: 12px;
-  height: 12px;
-  margin: -6px 0 0 -6px;
-  border-radius: 50%;
-  background: rgba(255, 248, 230, 0.9);
-  box-shadow: 0 0 12px rgba(255, 236, 180, 0.8);
-  opacity: 0;
-}
-
-.burstActive {
-  animation: letterStarBurst 0.85s ease-out forwards;
-}
-
-@keyframes letterStarBurst {
-  0% {
-    opacity: 0.9;
-    transform: scale(0.4);
-    box-shadow:
-      0 0 8px rgba(255, 236, 180, 0.9),
-      0 0 0 0 rgba(251, 191, 36, 0.35);
-  }
-  40% {
-    opacity: 0.75;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(18);
-    box-shadow:
-      0 0 40px rgba(255, 236, 180, 0.15),
-      0 0 0 80px rgba(251, 191, 36, 0);
-  }
-}
-
-.reveal {
+.closing {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding-top: 0.5rem;
+  align-items: flex-end;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding-bottom: 0.25rem;
 }
 
-.revealLine {
+.signature {
   margin: 0;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  font-family: "Ma Shan Zheng", "Songti SC", "STSong", serif;
+  font-size: 17px;
+  line-height: 2.2;
+  color: #3a3228;
+  text-align: right;
 }
 
-.revealLineVisible {
-  opacity: 1;
-  transform: translateY(0);
+.date {
+  margin: 0;
+  font-family: "Ma Shan Zheng", "Songti SC", "STSong", serif;
+  font-size: 15px;
+  line-height: 2.2;
+  color: #5c5348;
+  text-align: right;
 }
 
-.revealLinePrimary {
-  font-size: 1.125rem;
-  letter-spacing: 0.08em;
-  color: rgba(251, 191, 36, 0.88);
+/* —— 羽毛笔书写区 —— */
+.letterContent {
+  position: relative;
+  font-family: "Ma Shan Zheng", "Songti SC", "STSong", serif;
 }
 
-.revealLineSecondary {
-  font-size: 1.35rem;
-  letter-spacing: 0.14em;
-  color: rgba(255, 224, 160, 0.95);
-  text-shadow: 0 0 18px rgba(251, 191, 36, 0.22);
-  animation: letterRevealBreathe 4.5s ease-in-out infinite;
+.writeBlock {
+  position: relative;
+  margin-bottom: 0;
 }
 
-@keyframes letterRevealBreathe {
-  0%,
-  100% {
-    opacity: 1;
-    text-shadow: 0 0 14px rgba(251, 191, 36, 0.18);
-  }
-  50% {
-    opacity: 0.88;
-    text-shadow: 0 0 22px rgba(251, 191, 36, 0.32);
-  }
+.writeBlockClosing {
+  margin-top: 0.75rem;
 }
 
-@media (min-width: 640px) {
-  .revealLinePrimary {
-    font-size: 1.25rem;
-  }
-  .revealLineSecondary {
-    font-size: 1.5rem;
-  }
+.writeBlockClosing .measureLayer,
+.writeBlockClosing .inkLayer {
+  text-align: right;
 }
 
-.backLink {
-  position: absolute;
-  bottom: 6rem;
-  left: 50%;
-  z-index: 20;
-  transform: translateX(-50%);
-  opacity: 0;
+.measureLayer {
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.5s ease;
 }
 
-.backLinkVisible {
+.inkLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+}
+
+.inkLayerMobile {
+  opacity: 0;
+  transition: opacity 0.9s ease-out;
+}
+
+.inkLayerMobileOn {
   opacity: 1;
-  pointer-events: auto;
 }
 
-@media (orientation: landscape) and (max-height: 500px) {
-  .backLink {
-    bottom: 2rem;
-  }
-  .bodyShell,
-  .body {
-    max-height: min(40vh, 16rem);
-  }
+.inkChar {
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.inkOn {
+  opacity: 1;
+}
+
+.pen {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  width: 48px;
+  height: 48px;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 1px 2px rgba(40, 24, 10, 0.28));
+  /* 笔尖在图内 (3.1%, 98.3%) */
+  transform-origin: 3.1% 98.3%;
+}
+
+.pen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cursor {
+  .moonHalo {
     animation: none;
-    opacity: 0.7;
+    opacity: 0.2;
   }
-  .button,
-  .revealLine,
-  .backLink {
-    transform: none !important;
-    transition: opacity 0.3s ease !important;
-  }
-  .burstActive {
-    animation: letterStarBurstSimple 0.35s ease-out forwards;
-  }
-  .revealLineSecondary {
+
+  .particle {
     animation: none;
+    opacity: 0.35;
+  }
+
+  .paper {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .inkChar {
+    opacity: 1;
+    transition: none;
+  }
+
+  .inkLayerMobile {
+    opacity: 1;
+    transition: none;
   }
 }
 
-@keyframes letterStarBurstSimple {
-  0% {
-    opacity: 0.7;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(4);
-  }
-}
+
